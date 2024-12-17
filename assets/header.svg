@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="200" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#50E3C2;stop-opacity:1" />
+    </linearGradient>
+    <style>
+      @keyframes slideIn {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-text { animation: slideIn 1s ease-out forwards; }
+      .animate-shape { animation: fadeIn 1.5s ease-out forwards; }
+    </style>
+  </defs>
+  
+  <rect x="10" y="10" width="780" height="180" rx="20" ry="20" 
+        fill="url(#headerGradient)" class="animate-shape" />
+  
+  <g transform="translate(400,100)" text-anchor="middle" class="animate-text">
+    <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="36" font-weight="bold">
+      GitHub Kanban MCP Server
+    </text>
+    <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="18" y="30">
+      Streamline Your Task Management with LLM
+    </text>
+  </g>
+  
+  <g transform="translate(60,100)" class="animate-shape">
+    <path d="M20,0 L40,20 L0,20 Z" fill="#FFFFFF" />
+    <rect x="0" y="30" width="40" height="40" rx="5" fill="#FFFFFF" opacity="0.8" />
+    <rect x="50" y="30" width="40" height="40" rx="5" fill="#FFFFFF" opacity="0.6" />
+    <rect x="100" y="30" width="40" height="40" rx="5" fill="#FFFFFF" opacity="0.4" />
+  </g>
+</svg>
