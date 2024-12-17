@@ -15,10 +15,9 @@ dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = process.env.GITHUB_OWNER;
-const GITHUB_REPO = process.env.GITHUB_REPO;
 
-if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
-  throw new Error('Required environment variables are not set');
+if (!GITHUB_TOKEN || !GITHUB_OWNER) {
+  throw new Error('Required environment variables (GITHUB_TOKEN, GITHUB_OWNER) are not set');
 }
 
 const octokit = new Octokit({
@@ -59,6 +58,10 @@ class KanbanServer {
           inputSchema: {
             type: 'object',
             properties: {
+              repo: {
+                type: 'string',
+                description: 'GitHubリポジトリ名',
+              },
               state: {
                 type: 'string',
                 enum: ['open', 'closed', 'all'],
@@ -72,6 +75,7 @@ class KanbanServer {
                 description: 'フィルタリングするラベル',
               },
             },
+            required: ['repo'],
           },
         },
         {
@@ -80,6 +84,10 @@ class KanbanServer {
           inputSchema: {
             type: 'object',
             properties: {
+              repo: {
+                type: 'string',
+                description: 'GitHubリポジトリ名',
+              },
               title: {
                 type: 'string',
                 description: 'issueのタイトル',
@@ -103,7 +111,7 @@ class KanbanServer {
                 description: 'アサインするユーザー',
               },
             },
-            required: ['title'],
+            required: ['repo', 'title'],
           },
         },
         {
@@ -112,6 +120,10 @@ class KanbanServer {
           inputSchema: {
             type: 'object',
             properties: {
+              repo: {
+                type: 'string',
+                description: 'GitHubリポジトリ名',
+              },
               issue_number: {
                 type: 'number',
                 description: 'issue番号',
@@ -144,7 +156,7 @@ class KanbanServer {
                 description: '新しいアサイン',
               },
             },
-            required: ['issue_number'],
+            required: ['repo', 'issue_number'],
           },
         },
       ],
@@ -153,9 +165,14 @@ class KanbanServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request): Promise<ToolResponse> => {
       try {
         const args = request.params.arguments as Record<string, unknown>;
+        if (!args?.repo) {
+          throw new McpError(ErrorCode.InvalidParams, 'Repository name is required');
+        }
+
         switch (request.params.name) {
           case 'list_issues':
             return await this.handleListIssues({
+              repo: args.repo as string,
               state: args?.state as IssueArgs['state'],
               labels: args?.labels as string[],
             });
@@ -164,6 +181,7 @@ class KanbanServer {
               throw new McpError(ErrorCode.InvalidParams, 'Title is required');
             }
             return await this.handleCreateIssue({
+              repo: args.repo as string,
               title: args.title as string,
               body: args?.body as string | undefined,
               labels: args?.labels as string[] | undefined,
@@ -175,6 +193,7 @@ class KanbanServer {
               throw new McpError(ErrorCode.InvalidParams, 'Issue number is required');
             }
             return await this.handleUpdateIssue({
+              repo: args.repo as string,
               issue_number: Number(args.issue_number),
               title: args?.title as string | undefined,
               body: args?.body as string | undefined,
@@ -199,10 +218,10 @@ class KanbanServer {
     });
   }
 
-  private async handleListIssues(args: IssueArgs): Promise<ToolResponse> {
+  private async handleListIssues(args: IssueArgs & { repo: string }): Promise<ToolResponse> {
     const { data: issues } = await octokit.issues.listForRepo({
       owner: GITHUB_OWNER!,
-      repo: GITHUB_REPO!,
+      repo: args.repo,
       state: args?.state || 'open',
       labels: args?.labels?.join(','),
     });
@@ -231,10 +250,10 @@ class KanbanServer {
     };
   }
 
-  private async handleCreateIssue(args: CreateIssueArgs): Promise<ToolResponse> {
+  private async handleCreateIssue(args: CreateIssueArgs & { repo: string }): Promise<ToolResponse> {
     const { data: issue } = await octokit.issues.create({
       owner: GITHUB_OWNER!,
-      repo: GITHUB_REPO!,
+      repo: args.repo,
       title: args.title,
       body: args.body,
       labels: args.labels,
@@ -255,10 +274,10 @@ class KanbanServer {
     };
   }
 
-  private async handleUpdateIssue(args: UpdateIssueArgs): Promise<ToolResponse> {
+  private async handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
     const { data: issue } = await octokit.issues.update({
       owner: GITHUB_OWNER!,
-      repo: GITHUB_REPO!,
+      repo: args.repo,
       issue_number: args.issue_number,
       title: args.title,
       body: args.body,
