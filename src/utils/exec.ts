@@ -1,5 +1,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { join } from 'path';
+import fs from 'fs/promises';
 
 export const execAsync = promisify(exec);
 
@@ -8,20 +10,32 @@ export const execAsync = promisify(exec);
  * @param content Markdownコンテンツ
  * @param filePath 一時ファイルのパス
  */
-export async function writeToTempFile(content: string, filePath: string, workingDir?: string): Promise<void> {
-  const fullPath = workingDir ? `${workingDir}/${filePath}` : filePath;
-  await execAsync(`echo "${content.replace(/"/g, '\\"')}" > ${fullPath}`);
+export async function writeToTempFile(content: string, filePath: string): Promise<string> {
+  const tmpDir = join(process.cwd(), 'tmp');
+  const fullPath = join(tmpDir, filePath);
+
+  // tmpディレクトリが存在しない場合は作成
+  try {
+    await fs.access(tmpDir);
+  } catch {
+    await fs.mkdir(tmpDir, { recursive: true });
+  }
+
+  // ファイルに内容を書き込む
+  await fs.writeFile(fullPath, content, 'utf-8');
+  
+  return fullPath;
 }
 
 /**
  * 一時ファイルを削除する
  * @param filePath 一時ファイルのパス
- * @param workingDir 作業ディレクトリ（オプション）
  */
-export async function removeTempFile(filePath: string, workingDir?: string): Promise<void> {
+export async function removeTempFile(filePath: string): Promise<void> {
   try {
-    const fullPath = workingDir ? `${workingDir}/${filePath}` : filePath;
-    await execAsync(`rm ${fullPath}`);
+    const tmpDir = join(process.cwd(), 'tmp');
+    const fullPath = join(tmpDir, filePath);
+    await fs.unlink(fullPath);
   } catch (error) {
     console.error('Failed to remove temporary file:', error);
   }
