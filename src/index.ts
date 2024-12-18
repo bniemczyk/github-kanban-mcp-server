@@ -287,45 +287,79 @@ class KanbanServer {
   private async handleCreateIssue(args: CreateIssueArgs & { repo: string }): Promise<ToolResponse> {
     const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
     const assigneesFlag = args.assignees?.length ? `--assignee ${args.assignees.join(',')}` : '';
-    const bodyFlag = args.body ? `--body "${args.body}"` : '';
+    
+    // bodyの内容をファイルに書き出して、--body-fileオプションで渡す
+    const tempFile = 'temp_issue_body.md';
+    if (args.body) {
+      await execAsync(`echo "${args.body.replace(/"/g, '\\"')}" > ${tempFile}`);
+    }
+    const bodyFlag = args.body ? `--body-file ${tempFile}` : '';
 
-    const { stdout } = await execAsync(
-      `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag} --json number,title,url`
-    );
+    try {
+      const { stdout } = await execAsync(
+        `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag} --json number,title,url`
+      );
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: stdout,
-        },
-      ],
-    };
+      return {
+        content: [
+          {
+            type: 'text',
+            text: stdout,
+          },
+        ],
+      };
+    } finally {
+      // エラーが発生しても一時ファイルを確実に削除
+      try {
+        if (args.body) {
+          await execAsync(`rm ${tempFile}`);
+        }
+      } catch (error) {
+        console.error('Failed to remove temporary file:', error);
+      }
+    }
   }
 
   private async handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
     const titleFlag = args.title ? `--title "${args.title}"` : '';
-    const bodyFlag = args.body ? `--body "${args.body}"` : '';
     const stateFlag = args.state ? `--state ${args.state}` : '';
     const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
     const assigneesFlag = args.assignees?.length ? `--add-assignee ${args.assignees.join(',')}` : '';
 
-    const { stdout } = await execAsync(
-      `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${stateFlag} ${labelsFlag} ${assigneesFlag}`
-    );
+    // bodyの内容をファイルに書き出して、--body-fileオプションで渡す
+    const tempFile = 'temp_update_body.md';
+    if (args.body) {
+      await execAsync(`echo "${args.body.replace(/"/g, '\\"')}" > ${tempFile}`);
+    }
+    const bodyFlag = args.body ? `--body-file ${tempFile}` : '';
 
-    const { stdout: issueData } = await execAsync(
-      `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
-    );
+    try {
+      await execAsync(
+        `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${stateFlag} ${labelsFlag} ${assigneesFlag}`
+      );
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: issueData,
-        },
-      ],
-    };
+      const { stdout: issueData } = await execAsync(
+        `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: issueData,
+          },
+        ],
+      };
+    } finally {
+      // エラーが発生しても一時ファイルを確実に削除
+      try {
+        if (args.body) {
+          await execAsync(`rm ${tempFile}`);
+        }
+      } catch (error) {
+        console.error('Failed to remove temporary file:', error);
+      }
+    }
   }
 
   private async handleDeleteIssue(args: { repo: string; issue_number: string }): Promise<ToolResponse> {
@@ -344,18 +378,31 @@ class KanbanServer {
   }
 
   private async handleAddComment(args: { repo: string; issue_number: string; body: string }): Promise<ToolResponse> {
-    const { stdout } = await execAsync(
-      `gh issue comment ${args.issue_number} --repo ${args.repo} --body "${args.body}"`
-    );
+    // bodyの内容をファイルに書き出して、--body-fileオプションで渡す
+    const tempFile = 'temp_comment_body.md';
+    await execAsync(`echo "${args.body.replace(/"/g, '\\"')}" > ${tempFile}`);
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: stdout || 'Comment added successfully',
-        },
-      ],
-    };
+    try {
+      const { stdout } = await execAsync(
+        `gh issue comment ${args.issue_number} --repo ${args.repo} --body-file ${tempFile}`
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: stdout || 'Comment added successfully',
+          },
+        ],
+      };
+    } finally {
+      // エラーが発生しても一時ファイルを確実に削除
+      try {
+        await execAsync(`rm ${tempFile}`);
+      } catch (error) {
+        console.error('Failed to remove temporary file:', error);
+      }
+    }
   }
 
   async run(): Promise<void> {
