@@ -30,13 +30,12 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
   const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
   const assigneesFlag = args.assignees?.length ? `--assignee ${args.assignees.join(',')}` : '';
   
-  const tempFile = 'temp_issue_body.md';
+  const tempFile = 'issue_body.md';
   let bodyFlag = '';
 
   try {
     if (args.body) {
-      await writeToTempFile(args.body, tempFile, args.workingDir);
-      const fullPath = args.workingDir ? `${args.workingDir}\\${tempFile}` : tempFile;
+      const fullPath = await writeToTempFile(args.body, tempFile);
       bodyFlag = `--body-file "${fullPath}"`;
     }
 
@@ -63,7 +62,7 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
     };
   } finally {
     if (args.body) {
-      await removeTempFile(tempFile, args.workingDir);
+      await removeTempFile(tempFile);
     }
   }
 }
@@ -77,13 +76,13 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
   const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
   const assigneesFlag = args.assignees?.length ? `--add-assignee ${args.assignees.join(',')}` : '';
 
-  const tempFile = 'temp_update_body.md';
+  const tempFile = 'update_body.md';
   let bodyFlag = '';
 
   try {
     if (args.body) {
-      await writeToTempFile(args.body, tempFile);
-      bodyFlag = `--body-file ${tempFile}`;
+      const fullPath = await writeToTempFile(args.body, tempFile);
+      bodyFlag = `--body-file "${fullPath}"`;
     }
 
     await execAsync(
@@ -110,34 +109,16 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
 }
 
 /**
- * Issueを削除する
- */
-export async function handleDeleteIssue(args: { repo: string; issue_number: string }): Promise<ToolResponse> {
-  const { stdout } = await execAsync(
-    `gh issue delete ${args.issue_number} --repo ${args.repo} --yes`
-  );
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: stdout || 'Issue deleted successfully',
-      },
-    ],
-  };
-}
-
-/**
  * Issueにコメントを追加する
  */
 export async function handleAddComment(args: { repo: string; issue_number: string; body: string }): Promise<ToolResponse> {
-  const tempFile = 'temp_comment_body.md';
+  const tempFile = 'comment_body.md';
 
   try {
-    await writeToTempFile(args.body, tempFile);
+    const fullPath = await writeToTempFile(args.body, tempFile);
 
     const { stdout } = await execAsync(
-      `gh issue comment ${args.issue_number} --repo ${args.repo} --body-file ${tempFile}`
+      `gh issue comment ${args.issue_number} --repo ${args.repo} --body-file "${fullPath}"`
     );
 
     return {
