@@ -7,22 +7,11 @@ import {
   McpError,
   ErrorCode,
 } from '@modelcontextprotocol/sdk/types.js';
-import { Octokit } from '@octokit/rest';
-import dotenv from 'dotenv';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { IssueArgs, CreateIssueArgs, UpdateIssueArgs, ToolResponse } from './types.js';
 
-dotenv.config();
-
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_OWNER = process.env.GITHUB_OWNER;
-
-if (!GITHUB_TOKEN || !GITHUB_OWNER) {
-  throw new Error('Required environment variables (GITHUB_TOKEN, GITHUB_OWNER) are not set');
-}
-
-const octokit = new Octokit({
-  auth: GITHUB_TOKEN,
-});
+const execAsync = promisify(exec);
 
 class KanbanServer {
   private server: Server;
@@ -31,7 +20,7 @@ class KanbanServer {
     this.server = new Server(
       {
         name: 'github-kanban-mcp-server',
-        version: '0.1.0',
+        version: '0.2.0',
       },
       {
         capabilities: {
@@ -159,6 +148,46 @@ class KanbanServer {
             required: ['repo', 'issue_number'],
           },
         },
+        {
+          name: 'delete_issue',
+          description: 'カンバンボードのタスクを削除',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              repo: {
+                type: 'string',
+                description: 'GitHubリポジトリ名',
+              },
+              issue_number: {
+                type: 'string',
+                description: 'タスク（Issue）のID',
+              },
+            },
+            required: ['repo', 'issue_number'],
+          },
+        },
+        {
+          name: 'add_comment',
+          description: 'タスクにコメントを追加',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              repo: {
+                type: 'string',
+                description: 'GitHubリポジトリ名',
+              },
+              issue_number: {
+                type: 'string',
+                description: 'タスク（Issue）のID',
+              },
+              body: {
+                type: 'string',
+                description: 'コメントの内容（Markdown形式対応）',
+              },
+            },
+            required: ['repo', 'issue_number', 'body'],
+          },
+        },
       ],
     }));
 
@@ -202,6 +231,25 @@ class KanbanServer {
               assignees: args?.assignees as string[] | undefined,
             });
           }
+          case 'delete_issue': {
+            if (!args?.issue_number) {
+              throw new McpError(ErrorCode.InvalidParams, 'Issue number is required');
+            }
+            return await this.handleDeleteIssue({
+              repo: args.repo as string,
+              issue_number: args.issue_number as string,
+            });
+          }
+          case 'add_comment': {
+            if (!args?.issue_number || !args?.body) {
+              throw new McpError(ErrorCode.InvalidParams, 'Issue number and body are required');
+            }
+            return await this.handleAddComment({
+              repo: args.repo as string,
+              issue_number: args.issue_number as string,
+              body: args.body as string,
+            });
+          }
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -219,83 +267,92 @@ class KanbanServer {
   }
 
   private async handleListIssues(args: IssueArgs & { repo: string }): Promise<ToolResponse> {
-    const { data: issues } = await octokit.issues.listForRepo({
-      owner: GITHUB_OWNER!,
-      repo: args.repo,
-      state: args?.state || 'open',
-      labels: args?.labels?.join(','),
-    });
+    const stateFlag = args.state ? `--state ${args.state}` : '';
+    const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
+    
+    const { stdout } = await execAsync(
+      `gh issue list --repo ${args.repo} ${stateFlag} ${labelsFlag} --json number,title,state,labels,assignees,createdAt,updatedAt`
+    );
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(
-            issues.map(issue => ({
-              number: issue.number,
-              title: issue.title,
-              state: issue.state,
-              labels: issue.labels.map(label => 
-                typeof label === 'string' ? label : label.name
-              ),
-              assignees: issue.assignees?.map(assignee => assignee.login),
-              created_at: issue.created_at,
-              updated_at: issue.updated_at,
-            })),
-            null,
-            2
-          ),
+          text: stdout,
         },
       ],
     };
   }
 
   private async handleCreateIssue(args: CreateIssueArgs & { repo: string }): Promise<ToolResponse> {
-    const { data: issue } = await octokit.issues.create({
-      owner: GITHUB_OWNER!,
-      repo: args.repo,
-      title: args.title,
-      body: args.body,
-      labels: args.labels,
-      assignees: args.assignees,
-    });
+    const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
+    const assigneesFlag = args.assignees?.length ? `--assignee ${args.assignees.join(',')}` : '';
+    const bodyFlag = args.body ? `--body "${args.body}"` : '';
+
+    const { stdout } = await execAsync(
+      `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag} --json number,title,url`
+    );
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            number: issue.number,
-            title: issue.title,
-            url: issue.html_url,
-          }, null, 2),
+          text: stdout,
         },
       ],
     };
   }
 
   private async handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
-    const { data: issue } = await octokit.issues.update({
-      owner: GITHUB_OWNER!,
-      repo: args.repo,
-      issue_number: args.issue_number,
-      title: args.title,
-      body: args.body,
-      state: args.state,
-      labels: args.labels,
-      assignees: args.assignees,
-    });
+    const titleFlag = args.title ? `--title "${args.title}"` : '';
+    const bodyFlag = args.body ? `--body "${args.body}"` : '';
+    const stateFlag = args.state ? `--state ${args.state}` : '';
+    const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
+    const assigneesFlag = args.assignees?.length ? `--add-assignee ${args.assignees.join(',')}` : '';
+
+    const { stdout } = await execAsync(
+      `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${stateFlag} ${labelsFlag} ${assigneesFlag}`
+    );
+
+    const { stdout: issueData } = await execAsync(
+      `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
+    );
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            number: issue.number,
-            title: issue.title,
-            state: issue.state,
-            url: issue.html_url,
-          }, null, 2),
+          text: issueData,
+        },
+      ],
+    };
+  }
+
+  private async handleDeleteIssue(args: { repo: string; issue_number: string }): Promise<ToolResponse> {
+    const { stdout } = await execAsync(
+      `gh issue delete ${args.issue_number} --repo ${args.repo} --yes`
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: stdout || 'Issue deleted successfully',
+        },
+      ],
+    };
+  }
+
+  private async handleAddComment(args: { repo: string; issue_number: string; body: string }): Promise<ToolResponse> {
+    const { stdout } = await execAsync(
+      `gh issue comment ${args.issue_number} --repo ${args.repo} --body "${args.body}"`
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: stdout || 'Comment added successfully',
         },
       ],
     };
