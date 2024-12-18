@@ -297,14 +297,23 @@ class KanbanServer {
 
     try {
       const { stdout } = await execAsync(
-        `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag} --json number,title,url`
+        `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
+      );
+
+      // URLから issue number を抽出
+      const issueUrl = stdout.trim();
+      const issueNumber = issueUrl.split('/').pop();
+
+      // 作成したissueの詳細情報を取得
+      const { stdout: issueData } = await execAsync(
+        `gh issue view ${issueNumber} --repo ${args.repo} --json number,title,url`
       );
 
       return {
         content: [
           {
             type: 'text',
-            text: stdout,
+            text: issueData,
           },
         ],
       };
