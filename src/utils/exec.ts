@@ -8,17 +8,20 @@ export const execAsync = promisify(exec);
  * @param content Markdownコンテンツ
  * @param filePath 一時ファイルのパス
  */
-export async function writeToTempFile(content: string, filePath: string): Promise<void> {
-  await execAsync(`echo "${content.replace(/"/g, '\\"')}" > ${filePath}`);
+export async function writeToTempFile(content: string, filePath: string, workingDir?: string): Promise<void> {
+  const fullPath = workingDir ? `${workingDir}/${filePath}` : filePath;
+  await execAsync(`echo "${content.replace(/"/g, '\\"')}" > ${fullPath}`);
 }
 
 /**
  * 一時ファイルを削除する
  * @param filePath 一時ファイルのパス
+ * @param workingDir 作業ディレクトリ（オプション）
  */
-export async function removeTempFile(filePath: string): Promise<void> {
+export async function removeTempFile(filePath: string, workingDir?: string): Promise<void> {
   try {
-    await execAsync(`rm ${filePath}`);
+    const fullPath = workingDir ? `${workingDir}/${filePath}` : filePath;
+    await execAsync(`rm ${fullPath}`);
   } catch (error) {
     console.error('Failed to remove temporary file:', error);
   }
