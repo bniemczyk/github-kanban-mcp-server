@@ -49,7 +49,7 @@ export const createIssueSchema = {
         type: 'string',
       },
       description: 'アサインするユーザー',
-    },
+    }
   },
   required: ['repo', 'title'],
 };
@@ -91,21 +91,6 @@ export const updateIssueSchema = {
         type: 'string',
       },
       description: '新しいアサイン',
-    },
-  },
-  required: ['repo', 'issue_number'],
-};
-
-export const deleteIssueSchema = {
-  type: 'object',
-  properties: {
-    repo: {
-      type: 'string',
-      description: 'GitHubリポジトリ名',
-    },
-    issue_number: {
-      type: 'string',
-      description: 'タスク（Issue）のID',
     },
   },
   required: ['repo', 'issue_number'],
