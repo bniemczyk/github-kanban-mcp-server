@@ -35,8 +35,9 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
 
   try {
     if (args.body) {
-      await writeToTempFile(args.body, tempFile);
-      bodyFlag = `--body-file ${tempFile}`;
+      await writeToTempFile(args.body, tempFile, args.workingDir);
+      const fullPath = args.workingDir ? `${args.workingDir}/${tempFile}` : tempFile;
+      bodyFlag = `--body-file ${fullPath}`;
     }
 
     const { stdout } = await execAsync(
@@ -62,7 +63,7 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
     };
   } finally {
     if (args.body) {
-      await removeTempFile(tempFile);
+      await removeTempFile(tempFile, args.workingDir);
     }
   }
 }
