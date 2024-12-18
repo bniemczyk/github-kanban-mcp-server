@@ -8,6 +8,7 @@ export interface CreateIssueArgs {
   body?: string;
   labels?: string[];
   assignees?: string[];
+  workingDir: string;
 }
 
 export interface UpdateIssueArgs {
