@@ -5,19 +5,18 @@ import {
   ListToolsRequestSchema,
   McpError,
   ErrorCode,
+  CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import {
   listIssuesSchema,
   createIssueSchema,
   updateIssueSchema,
-  deleteIssueSchema,
   addCommentSchema,
 } from './schemas/index.js';
 import {
   handleListIssues,
   handleCreateIssue,
   handleUpdateIssue,
-  handleDeleteIssue,
   handleAddComment,
 } from './handlers/index.js';
 import { ToolResponse } from './types.js';
@@ -66,11 +65,6 @@ export class KanbanServer {
           inputSchema: updateIssueSchema,
         },
         {
-          name: 'delete_issue',
-          description: 'カンバンボードのタスクを削除',
-          inputSchema: deleteIssueSchema,
-        },
-        {
           name: 'add_comment',
           description: 'タスクにコメントを追加',
           inputSchema: addCommentSchema,
@@ -78,7 +72,7 @@ export class KanbanServer {
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request): Promise<ToolResponse> => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest): Promise<ToolResponse> => {
       try {
         const args = request.params.arguments as Record<string, unknown>;
         if (!args?.repo) {
@@ -118,15 +112,6 @@ export class KanbanServer {
               assignees: args?.assignees as string[] | undefined,
             });
           }
-          case 'delete_issue': {
-            if (!args?.issue_number) {
-              throw new McpError(ErrorCode.InvalidParams, 'Issue number is required');
-            }
-            return await handleDeleteIssue({
-              repo: args.repo as string,
-              issue_number: args.issue_number as string,
-            });
-          }
           case 'add_comment': {
             if (!args?.issue_number || !args?.body) {
               throw new McpError(ErrorCode.InvalidParams, 'Issue number and body are required');
@@ -153,7 +138,7 @@ export class KanbanServer {
     });
   }
 
-  async run(): Promise<void> {
+  public async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error('GitHub Kanban MCP server running on stdio');
