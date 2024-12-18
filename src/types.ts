@@ -1,5 +1,3 @@
-import { Octokit } from '@octokit/rest';
-
 export interface IssueArgs {
   state?: 'open' | 'closed' | 'all';
   labels?: string[];
