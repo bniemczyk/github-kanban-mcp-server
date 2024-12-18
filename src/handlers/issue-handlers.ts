@@ -36,8 +36,8 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
   try {
     if (args.body) {
       await writeToTempFile(args.body, tempFile, args.workingDir);
-      const fullPath = args.workingDir ? `${args.workingDir}/${tempFile}` : tempFile;
-      bodyFlag = `--body-file ${fullPath}`;
+      const fullPath = args.workingDir ? `${args.workingDir}\\${tempFile}` : tempFile;
+      bodyFlag = `--body-file "${fullPath}"`;
     }
 
     const { stdout } = await execAsync(
