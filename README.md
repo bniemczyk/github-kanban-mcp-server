@@ -1,7 +1,14 @@
+<div align="center">
+
 # 🎯 GitHub Kanban MCP Server
 
-<div align="center">
-  <img src="assets/header.svg" alt="GitHub Kanban MCP Server" width="100%" />
+<img src="assets/header.svg" alt="GitHub Kanban MCP Server" width="100%" />
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
+[![npm](https://img.shields.io/badge/npm-9.x-red.svg)](https://www.npmjs.com/)
+
 </div>
 
 ## 📋 概要
