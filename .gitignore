@@ -6,3 +6,6 @@ build/
 coverage/
 *.log
 .vscode/
+tmp
+task1.md
+
