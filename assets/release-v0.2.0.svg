@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="200" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- メインの背景グラデーション -->
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1">
+        <animate attributeName="stop-color"
+                 values="#3b82f6; #6366f1; #8b5cf6; #3b82f6"
+                 dur="10s"
+                 repeatCount="indefinite" />
+      </stop>
+      <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1">
+        <animate attributeName="stop-color"
+                 values="#6366f1; #8b5cf6; #3b82f6; #6366f1"
+                 dur="10s"
+                 repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1">
+        <animate attributeName="stop-color"
+                 values="#8b5cf6; #3b82f6; #6366f1; #8b5cf6"
+                 dur="10s"
+                 repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+
+    <!-- テキストグラデーション -->
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1">
+        <animate attributeName="stop-color"
+                 values="#ffffff; #ffd700; #ffffff"
+                 dur="3s"
+                 repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:1">
+        <animate attributeName="stop-color"
+                 values="#ffd700; #ffffff; #ffd700"
+                 dur="3s"
+                 repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+    
+    <!-- 装飾用のパターン -->
+    <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#fff" opacity="0.2">
+        <animate attributeName="opacity"
+                 values="0.2;0.5;0.2"
+                 dur="3s"
+                 repeatCount="indefinite" />
+      </circle>
+    </pattern>
+    
+    <style>
+      @keyframes floatIn {
+        0% { 
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        100% { 
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes glowPulse {
+        0% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); }
+        50% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        100% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); }
+      }
+      
+      @keyframes rotateGlow {
+        0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+        50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+        100% { transform: rotate(360deg) scale(1); opacity: 0.8; }
+      }
+
+      .version-text {
+        animation: floatIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+                  glowPulse 3s ease-in-out infinite;
+      }
+      
+      .date-text {
+        animation: floatIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+      }
+      
+      .decorative-circle {
+        animation: rotateGlow 15s linear infinite;
+      }
+    </style>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect x="10" y="10" width="780" height="180" rx="30" ry="30" 
+        fill="url(#headerGradient)"
+        filter="drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))">
+    <animate attributeName="filter"
+             values="drop-shadow(0 4px 6px rgba(0,0,0,0.1));drop-shadow(0 6px 8px rgba(0,0,0,0.2));drop-shadow(0 4px 6px rgba(0,0,0,0.1))"
+             dur="3s"
+             repeatCount="indefinite" />
+  </rect>
+  
+  <!-- 装飾パターン -->
+  <rect x="10" y="10" width="780" height="180" rx="30" ry="30" 
+        fill="url(#dots)" />
+  
+  <!-- 装飾的な円 -->
+  <circle cx="650" cy="100" r="60" 
+          fill="none" 
+          stroke="rgba(255,255,255,0.2)" 
+          stroke-width="2"
+          class="decorative-circle" />
+  
+  <!-- メインコンテンツ -->
+  <g transform="translate(400,85)" text-anchor="middle">
+    <text class="version-text" 
+          fill="url(#textGradient)" 
+          font-family="'Segoe UI', system-ui, sans-serif" 
+          font-size="64" 
+          font-weight="bold"
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))">
+      Version 0.2.0
+    </text>
+    <text class="date-text"
+          y="50" 
+          fill="#FFFFFF" 
+          font-family="'Segoe UI', system-ui, sans-serif" 
+          font-size="24"
+          opacity="0">
+      Release Notes - December 2023
+      <animate attributeName="fill-opacity"
+               values="0.7;1;0.7"
+               dur="3s"
+               repeatCount="indefinite" />
+    </text>
+  </g>
+  
+  <!-- 装飾的なアイコン -->
+  <g transform="translate(80,100)">
+    <rect x="0" y="0" width="30" height="30" rx="8" 
+          fill="#FFFFFF" opacity="0.9"
+          transform="rotate(-15)">
+      <animate attributeName="opacity"
+               values="0.9;0.7;0.9"
+               dur="2s"
+               repeatCount="indefinite" />
+    </rect>
+    <rect x="40" y="0" width="30" height="30" rx="8" 
+          fill="#FFFFFF" opacity="0.7"
+          transform="rotate(15)">
+      <animate attributeName="opacity"
+               values="0.7;0.5;0.7"
+               dur="2s"
+               repeatCount="indefinite" />
+    </rect>
+    <rect x="80" y="0" width="30" height="30" rx="8" 
+          fill="#FFFFFF" opacity="0.5"
+          transform="rotate(-15)">
+      <animate attributeName="opacity"
+               values="0.5;0.3;0.5"
+               dur="2s"
+               repeatCount="indefinite" />
+    </rect>
+  </g>
+</svg>
