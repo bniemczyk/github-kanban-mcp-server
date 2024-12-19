@@ -2,7 +2,7 @@
 
 # 🎯 GitHub Kanban MCP Server
 
-<img src="assets/header.svg" alt="GitHub Kanban MCP Server" width="100%" />
+<img src="https://raw.githubusercontent.com/Sunwood-ai-labs/github-kanban-mcp-server/main/assets/header.svg" alt="GitHub Kanban MCP Server" width="100%" />
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://www.typescriptlang.org/)
