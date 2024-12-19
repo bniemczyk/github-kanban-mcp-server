@@ -72,7 +72,6 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
  */
 export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
   const titleFlag = args.title ? `--title "${args.title}"` : '';
-  const stateFlag = args.state ? `--state ${args.state}` : '';
   const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
   const assigneesFlag = args.assignees?.length ? `--add-assignee ${args.assignees.join(',')}` : '';
 
@@ -80,14 +79,25 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
   let bodyFlag = '';
 
   try {
-    if (args.body) {
-      const fullPath = await writeToTempFile(args.body, tempFile);
-      bodyFlag = `--body-file "${fullPath}"`;
+    // 状態の更新を処理
+    if (args.state) {
+      const command = args.state === 'closed' ? 'close' : 'reopen';
+      await execAsync(
+        `gh issue ${command} ${args.issue_number} --repo ${args.repo}`
+      );
     }
 
-    await execAsync(
-      `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${stateFlag} ${labelsFlag} ${assigneesFlag}`
-    );
+    // その他の更新を処理
+    if (args.title || args.body || args.labels?.length || args.assignees?.length) {
+      if (args.body) {
+        const fullPath = await writeToTempFile(args.body, tempFile);
+        bodyFlag = `--body-file "${fullPath}"`;
+      }
+
+      await execAsync(
+        `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
+      );
+    }
 
     const { stdout: issueData } = await execAsync(
       `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
