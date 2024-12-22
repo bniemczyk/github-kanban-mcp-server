@@ -1,6 +1,6 @@
 # 🚀 GitHub Kanban MCP Server：v0.2.0 - 2023-12-21
 
-![](../../assets/release-v0.2.0.svg)
+![](https://raw.githubusercontent.com/Sunwood-ai-labs/github-kanban-mcp-server/main/assets/release-v0.2.0.svg)
 
 ## 主な変更点 / Highlights
 
