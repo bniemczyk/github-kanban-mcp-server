@@ -125,7 +125,7 @@
           font-family="'Segoe UI', system-ui, sans-serif" 
           font-size="24"
           opacity="0">
-      Release Notes - December 2023
+      GitHub Kanban MCP Server Release Notes
       <animate attributeName="fill-opacity"
                values="0.7;1;0.7"
                dur="3s"
