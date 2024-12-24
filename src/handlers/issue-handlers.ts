@@ -3,6 +3,51 @@ import { IssueArgs, CreateIssueArgs, UpdateIssueArgs, ToolResponse } from '../ty
 import { execAsync, writeToTempFile, removeTempFile } from '../utils/exec.js';
 
 /**
+ * ランダムな16進数カラーコードを生成する
+ */
+function generateRandomColor(): string {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+/**
+ * リポジトリ内の既存のラベルを取得する
+ */
+async function getExistingLabels(repo: string): Promise<string[]> {
+  try {
+    const { stdout } = await execAsync(
+      `gh label list --repo ${repo} --json name --jq '.[].name'`
+    );
+    return stdout.trim().split('\n').filter(Boolean);
+  } catch (error) {
+    console.error('Failed to get labels:', error);
+    return [];
+  }
+}
+
+/**
+ * 新しいラベルを作成する
+ */
+async function createLabel(repo: string, name: string): Promise<void> {
+  const color = generateRandomColor().substring(1); // '#'を除去
+  try {
+    await execAsync(
+      `gh label create "${name}" --repo ${repo} --color "${color}"`
+    );
+  } catch (error) {
+    console.error(`Failed to create label ${name}:`, error);
+    throw new McpError(
+      ErrorCode.InternalError,
+      `Failed to create label ${name}: ${(error as Error).message}`
+    );
+  }
+}
+
+/**
  * Issue一覧を取得する
  */
 export async function handleListIssues(args: IssueArgs & { repo: string }): Promise<ToolResponse> {
@@ -27,13 +72,22 @@ export async function handleListIssues(args: IssueArgs & { repo: string }): Prom
  * 新しいIssueを作成する
  */
 export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }): Promise<ToolResponse> {
-  const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
   const assigneesFlag = args.assignees?.length ? `--assignee ${args.assignees.join(',')}` : '';
-  
   const tempFile = 'issue_body.md';
   let bodyFlag = '';
 
   try {
+    // ラベルの存在確認と作成
+    if (args.labels?.length) {
+      const existingLabels = await getExistingLabels(args.repo);
+      for (const label of args.labels) {
+        if (!existingLabels.includes(label)) {
+          await createLabel(args.repo, label);
+        }
+      }
+    }
+    const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
+
     if (args.body) {
       const fullPath = await writeToTempFile(args.body, tempFile);
       bodyFlag = `--body-file "${fullPath}"`;
