@@ -93,6 +93,7 @@ export class KanbanServer {
             return await handleCreateIssue({
               repo: args.repo as string,
               title: args.title as string,
+              emoji: args?.emoji as string | undefined,
               body: args?.body as string | undefined,
               labels: args?.labels as string[] | undefined,
               assignees: args?.assignees as string[] | undefined,
@@ -106,6 +107,7 @@ export class KanbanServer {
               repo: args.repo as string,
               issue_number: Number(args.issue_number),
               title: args?.title as string | undefined,
+              emoji: args?.emoji as string | undefined,
               body: args?.body as string | undefined,
               state: args?.state as 'open' | 'closed' | undefined,
               labels: args?.labels as string[] | undefined,
