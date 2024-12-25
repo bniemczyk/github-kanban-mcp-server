@@ -186,21 +186,39 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
 /**
  * Issueにコメントを追加する
  */
-export async function handleAddComment(args: { repo: string; issue_number: string; body: string }): Promise<ToolResponse> {
+export async function handleAddComment(args: {
+  repo: string;
+  issue_number: string;
+  body: string;
+  state?: 'open' | 'closed';
+}): Promise<ToolResponse> {
   const tempFile = 'comment_body.md';
 
   try {
+    // コメントを追加
     const fullPath = await writeToTempFile(args.body, tempFile);
-
     const { stdout } = await execAsync(
       `gh issue comment ${args.issue_number} --repo ${args.repo} --body-file "${fullPath}"`
+    );
+
+    // ステータスの変更が指定されている場合は処理
+    if (args.state) {
+      const command = args.state === 'closed' ? 'close' : 'reopen';
+      await execAsync(
+        `gh issue ${command} ${args.issue_number} --repo ${args.repo}`
+      );
+    }
+
+    // 更新後のissue情報を取得
+    const { stdout: issueData } = await execAsync(
+      `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
     );
 
     return {
       content: [
         {
           type: 'text',
-          text: stdout || 'Comment added successfully',
+          text: issueData,
         },
       ],
     };
