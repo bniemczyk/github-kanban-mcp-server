@@ -32,9 +32,13 @@ export const createIssueSchema = {
       type: 'string',
       description: 'issueのタイトル',
     },
+    emoji: {
+      type: 'string',
+      description: 'タイトルの先頭に付与するユニークな絵文字',
+    },
     body: {
       type: 'string',
-      description: 'issueの本文',
+      description: 'issueの本文（## の先頭には絵文字を付与して可読性を上げて）',
     },
     labels: {
       type: 'array',
@@ -68,6 +72,10 @@ export const updateIssueSchema = {
     title: {
       type: 'string',
       description: '新しいタイトル',
+    },
+    emoji: {
+      type: 'string',
+      description: 'タイトルの先頭に付与する絵文字',
     },
     body: {
       type: 'string',

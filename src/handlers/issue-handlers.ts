@@ -35,9 +35,16 @@ async function getExistingLabels(repo: string): Promise<string[]> {
 async function createLabel(repo: string, name: string): Promise<void> {
   const color = generateRandomColor().substring(1); // '#'を除去
   try {
+    // エラーメッセージから既存ラベルかどうかを判断
     await execAsync(
       `gh label create "${name}" --repo ${repo} --color "${color}"`
-    );
+    ).catch((error: Error) => {
+      if (error.message.includes('already exists')) {
+        // 既存のラベルの場合は正常終了
+        return;
+      }
+      throw error;
+    });
   } catch (error) {
     console.error(`Failed to create label ${name}:`, error);
     throw new McpError(
@@ -93,8 +100,11 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
       bodyFlag = `--body-file "${fullPath}"`;
     }
 
+    // タイトルに絵文字を付与（指定がある場合）
+    const titleWithEmoji = args.emoji ? `${args.emoji} ${args.title}` : args.title;
+
     const { stdout } = await execAsync(
-      `gh issue create --repo ${args.repo} --title "${args.title}" ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
+      `gh issue create --repo ${args.repo} --title "${titleWithEmoji}" ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
     );
 
     // URLから issue number を抽出
@@ -125,7 +135,8 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
  * 既存のIssueを更新する
  */
 export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
-  const titleFlag = args.title ? `--title "${args.title}"` : '';
+  // タイトルが更新される場合は絵文字を付与（指定がある場合）
+  const titleFlag = args.title ? `--title "${args.emoji ? `${args.emoji} ${args.title}` : args.title}"` : '';
   const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
   const assigneesFlag = args.assignees?.length ? `--add-assignee ${args.assignees.join(',')}` : '';
 
