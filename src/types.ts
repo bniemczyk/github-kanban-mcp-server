@@ -5,6 +5,7 @@ export interface IssueArgs {
 
 export interface CreateIssueArgs {
   title: string;
+  emoji?: string;
   body?: string;
   labels?: string[];
   assignees?: string[];
@@ -13,6 +14,7 @@ export interface CreateIssueArgs {
 export interface UpdateIssueArgs {
   issue_number: number;
   title?: string;
+  emoji?: string;
   body?: string;
   state?: 'open' | 'closed';
   labels?: string[];
