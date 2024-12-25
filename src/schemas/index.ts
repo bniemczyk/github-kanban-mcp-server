@@ -1,1 +1,2 @@
-export * from './tool-schemas.js';
+export * from './issue-schemas.js';
+export * from './comment-schemas.js';
