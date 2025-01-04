@@ -1,9 +1,9 @@
 export const listIssuesSchema = {
   type: 'object',
   properties: {
-    repo: {
+    path: {
       type: 'string',
-      description: 'GitHubリポジトリ名',
+      description: 'Gitリポジトリの絶対パス',
     },
     state: {
       type: 'string',
@@ -18,15 +18,15 @@ export const listIssuesSchema = {
       description: 'フィルタリングするラベル',
     },
   },
-  required: ['repo'],
+  required: [],
 };
 
 export const createIssueSchema = {
   type: 'object',
   properties: {
-    repo: {
+    path: {
       type: 'string',
-      description: 'GitHubリポジトリ名',
+      description: 'Gitリポジトリの絶対パス',
     },
     title: {
       type: 'string',
@@ -55,15 +55,15 @@ export const createIssueSchema = {
       description: 'アサインするユーザー',
     }
   },
-  required: ['repo', 'title'],
+  required: ['title'],
 };
 
 export const updateIssueSchema = {
   type: 'object',
   properties: {
-    repo: {
+    path: {
       type: 'string',
-      description: 'GitHubリポジトリ名',
+      description: 'Gitリポジトリの絶対パス',
     },
     issue_number: {
       type: 'number',
@@ -101,5 +101,5 @@ export const updateIssueSchema = {
       description: '新しいアサイン',
     },
   },
-  required: ['repo', 'issue_number'],
+  required: ['issue_number'],
 };
