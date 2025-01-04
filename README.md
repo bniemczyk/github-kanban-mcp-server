@@ -1,5 +1,3 @@
-# GitHub Kanban MCP Server
-
 <div align="center">
 
 # 🎯 GitHub Kanban MCP Server
