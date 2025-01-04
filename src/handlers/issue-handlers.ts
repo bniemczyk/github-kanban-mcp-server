@@ -35,10 +35,11 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
   try {
     // ラベルの存在確認と作成
     if (args.labels?.length) {
-      const existingLabels = await getExistingLabels(args.repo);
+      const [owner, repo] = args.repo.split('/');
+      const existingLabels = await getExistingLabels(owner, repo);
       for (const label of args.labels) {
         if (!existingLabels.includes(label)) {
-          await createLabel(args.repo, label);
+          await createLabel(owner, repo, label);
         }
       }
     }
