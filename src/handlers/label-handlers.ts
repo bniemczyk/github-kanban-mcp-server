@@ -1,5 +1,6 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { execAsync } from '../utils/exec.js';
+import { getRepoInfoFromGitConfig } from '../utils/repo-info.js';
 
 /**
  * ランダムな16進数カラーコードを生成する
@@ -16,10 +17,11 @@ export function generateRandomColor(): string {
 /**
  * リポジトリ内の既存のラベルを取得する
  */
-export async function getExistingLabels(repo: string): Promise<string[]> {
+export async function getExistingLabels(path: string): Promise<string[]> {
   try {
+    const { owner, repo } = await getRepoInfoFromGitConfig(path);
     const { stdout } = await execAsync(
-      `gh label list --repo ${repo} --json name --jq '.[].name'`
+      `gh label list --repo ${owner}/${repo} --json name --jq '.[].name'`
     );
     return stdout.trim().split('\n').filter(Boolean);
   } catch (error) {
@@ -31,19 +33,13 @@ export async function getExistingLabels(repo: string): Promise<string[]> {
 /**
  * 新しいラベルを作成する
  */
-export async function createLabel(repo: string, name: string): Promise<void> {
+export async function createLabel(path: string, name: string): Promise<void> {
   const color = generateRandomColor().substring(1); // '#'を除去
+  const { owner, repo } = await getRepoInfoFromGitConfig(path);
   try {
-    // エラーメッセージから既存ラベルかどうかを判断
     await execAsync(
-      `gh label create "${name}" --repo ${repo} --color "${color}"`
-    ).catch((error: Error) => {
-      if (error.message.includes('already exists')) {
-        // 既存のラベルの場合は正常終了
-        return;
-      }
-      throw error;
-    });
+      `gh label create "${name}" --repo ${owner}/${repo} --color "${color}" --force`
+    );
   } catch (error) {
     console.error(`Failed to create label ${name}:`, error);
     throw new McpError(
