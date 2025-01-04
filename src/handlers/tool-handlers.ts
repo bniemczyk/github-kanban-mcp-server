@@ -12,12 +12,27 @@ export async function handleToolRequest(request: CallToolRequest): Promise<ToolR
   try {
     const args = request.params.arguments as Record<string, unknown> & RepoArgs;
 
+    // pathパラメータの確認
+    if (!args.path) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'リポジトリのパスを指定してください。引数で "path": "/path/to/repo" の形式で指定してください。'
+      );
+    }
+
     // リポジトリ情報の取得
     let repoInfo: { owner: string; repo: string };
-    if (args.owner && args.repo) {
-      repoInfo = validateRepoInfo(args);
-    } else {
-      repoInfo = await getRepoInfoFromGitConfig();
+    try {
+      repoInfo = await getRepoInfoFromGitConfig(args.path as string);
+    } catch (error) {
+      // Gitリポジトリ関連のエラーの場合は、より具体的なエラーメッセージを表示
+      if (error instanceof McpError) {
+        throw error;
+      }
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `指定されたパスのリポジトリ情報の取得に失敗しました: ${(error as Error).message}`
+      );
     }
 
     const fullRepo = `${repoInfo.owner}/${repoInfo.repo}`;
@@ -25,8 +40,7 @@ export async function handleToolRequest(request: CallToolRequest): Promise<ToolR
     switch (request.params.name) {
       case 'list_issues':
         return await handleListIssues({
-          owner: repoInfo.owner,
-          repo: repoInfo.repo,
+          path: args.path as string,
           state: args?.state as 'open' | 'closed' | 'all',
           labels: args?.labels as string[],
         });
@@ -35,8 +49,7 @@ export async function handleToolRequest(request: CallToolRequest): Promise<ToolR
           throw new McpError(ErrorCode.InvalidParams, 'Title is required');
         }
         return await handleCreateIssue({
-          owner: repoInfo.owner,
-          repo: repoInfo.repo,
+          path: args.path as string,
           title: args.title as string,
           emoji: args?.emoji as string | undefined,
           body: args?.body as string | undefined,
@@ -49,8 +62,7 @@ export async function handleToolRequest(request: CallToolRequest): Promise<ToolR
           throw new McpError(ErrorCode.InvalidParams, 'Issue number is required');
         }
         return await handleUpdateIssue({
-          owner: repoInfo.owner,
-          repo: repoInfo.repo,
+          path: args.path as string,
           issue_number: Number(args.issue_number),
           title: args?.title as string | undefined,
           emoji: args?.emoji as string | undefined,
