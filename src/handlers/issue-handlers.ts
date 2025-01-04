@@ -2,16 +2,32 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { IssueArgs, CreateIssueArgs, UpdateIssueArgs, ToolResponse } from '../types.js';
 import { execAsync, writeToTempFile, removeTempFile } from '../utils/exec.js';
 import { getExistingLabels, createLabel } from './label-handlers.js';
+import { getRepoInfoFromGitConfig } from '../utils/repo-info.js';
+
+/**
+ * リポジトリ情報を取得する
+ */
+async function getRepoInfo(args: { path: string }): Promise<{ owner: string; repo: string }> {
+  if (!args.path) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      'リポジトリのパスを指定してください。'
+    );
+  }
+  
+  return await getRepoInfoFromGitConfig(args.path);
+}
 
 /**
  * Issue一覧を取得する
  */
-export async function handleListIssues(args: IssueArgs & { repo: string }): Promise<ToolResponse> {
+export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
+  const { owner, repo } = await getRepoInfo(args);
   const stateFlag = args.state ? `--state ${args.state}` : '';
   const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
   
   const { stdout } = await execAsync(
-    `gh issue list --repo ${args.repo} ${stateFlag} ${labelsFlag} --json number,title,state,labels,assignees,createdAt,updatedAt`
+    `gh issue list --repo ${owner}/${repo} ${stateFlag} ${labelsFlag} --json number,title,state,labels,assignees,createdAt,updatedAt`
   );
 
   return {
@@ -27,7 +43,8 @@ export async function handleListIssues(args: IssueArgs & { repo: string }): Prom
 /**
  * 新しいIssueを作成する
  */
-export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }): Promise<ToolResponse> {
+export async function handleCreateIssue(args: CreateIssueArgs): Promise<ToolResponse> {
+  const { owner, repo } = await getRepoInfo(args);
   const assigneesFlag = args.assignees?.length ? `--assignee ${args.assignees.join(',')}` : '';
   const tempFile = 'issue_body.md';
   let bodyFlag = '';
@@ -35,11 +52,10 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
   try {
     // ラベルの存在確認と作成
     if (args.labels?.length) {
-      const [owner, repo] = args.repo.split('/');
-      const existingLabels = await getExistingLabels(owner, repo);
+      const existingLabels = await getExistingLabels(args.path);
       for (const label of args.labels) {
         if (!existingLabels.includes(label)) {
-          await createLabel(owner, repo, label);
+          await createLabel(args.path, label);
         }
       }
     }
@@ -54,7 +70,7 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
     const titleWithEmoji = args.emoji ? `${args.emoji} ${args.title}` : args.title;
 
     const { stdout } = await execAsync(
-      `gh issue create --repo ${args.repo} --title "${titleWithEmoji}" ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
+      `gh issue create --repo ${owner}/${repo} --title "${titleWithEmoji}" ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
     );
 
     // URLから issue number を抽出
@@ -63,7 +79,7 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
 
     // 作成したissueの詳細情報を取得
     const { stdout: issueData } = await execAsync(
-      `gh issue view ${issueNumber} --repo ${args.repo} --json number,title,url`
+      `gh issue view ${issueNumber} --repo ${owner}/${repo} --json number,title,url`
     );
 
     return {
@@ -84,7 +100,8 @@ export async function handleCreateIssue(args: CreateIssueArgs & { repo: string }
 /**
  * 既存のIssueを更新する
  */
-export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }): Promise<ToolResponse> {
+export async function handleUpdateIssue(args: UpdateIssueArgs): Promise<ToolResponse> {
+  const { owner, repo } = await getRepoInfo(args);
   // タイトルが更新される場合は絵文字を付与（指定がある場合）
   const titleFlag = args.title ? `--title "${args.emoji ? `${args.emoji} ${args.title}` : args.title}"` : '';
   const labelsFlag = args.labels?.length ? `--add-label ${args.labels.join(',')}` : '';
@@ -98,7 +115,7 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
     if (args.state) {
       const command = args.state === 'closed' ? 'close' : 'reopen';
       await execAsync(
-        `gh issue ${command} ${args.issue_number} --repo ${args.repo}`
+        `gh issue ${command} ${args.issue_number} --repo ${owner}/${repo}`
       );
     }
 
@@ -110,12 +127,12 @@ export async function handleUpdateIssue(args: UpdateIssueArgs & { repo: string }
       }
 
       await execAsync(
-        `gh issue edit ${args.issue_number} --repo ${args.repo} ${titleFlag} ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
+        `gh issue edit ${args.issue_number} --repo ${owner}/${repo} ${titleFlag} ${bodyFlag} ${labelsFlag} ${assigneesFlag}`
       );
     }
 
     const { stdout: issueData } = await execAsync(
-      `gh issue view ${args.issue_number} --repo ${args.repo} --json number,title,state,url`
+      `gh issue view ${args.issue_number} --repo ${owner}/${repo} --json number,title,state,url`
     );
 
     return {
