@@ -39,7 +39,7 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
       },
     ],
   };
-  } catch (error) {
+  } catch (error as Error) {
 	  const trace = error.stack.replace(/^\s+at /m, '');
 	  return {
 		  content: [
