@@ -43,7 +43,7 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
 	  return {
 		  content: [
 			  { type: 'text',
-		            text: `Error: ${console.error(error)}',
+		            text: console.error(error)
 			  },
 		  ],
 	  }
