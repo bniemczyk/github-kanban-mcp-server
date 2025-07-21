@@ -43,7 +43,7 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
 	  return {
 		  content: [
 			  { type: 'text',
-		            text: console.error(error)
+		            text: Error.captureStackTrace(error, handleListIssues).stack
 			  },
 		  ],
 	  }
