@@ -22,6 +22,7 @@ async function getRepoInfo(args: { path: string }): Promise<{ owner: string; rep
  * Issue一覧を取得する
  */
 export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
+  try {
   const { owner, repo } = await getRepoInfo(args);
   const stateFlag = args.state ? `--state ${args.state}` : '';
   const labelsFlag = args.labels?.length ? `--label ${args.labels.join(',')}` : '';
@@ -38,6 +39,16 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
       },
     ],
   };
+  } catch (error) {
+	  const trace = error.stack.replace(/^\s+at /m, '');
+	  return {
+		  content: [
+			  { type: 'text',
+		            text: `Error: ${error.message}\nStack Trace: ${trace}`
+			  },
+		  ],
+	  }
+  }
 }
 
 /**
