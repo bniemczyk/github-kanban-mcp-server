@@ -4,6 +4,8 @@ import { execAsync, writeToTempFile, removeTempFile } from '../utils/exec.js';
 import { getExistingLabels, createLabel } from './label-handlers.js';
 import { getRepoInfoFromGitConfig } from '../utils/repo-info.js';
 
+st = require('stack-trace');
+
 /**
  * リポジトリ情報を取得する
  */
@@ -40,6 +42,12 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
     ],
   };
   } catch (error) {
+	  rv = "";
+	  const trace = st.get()
+	  	trace.forEach(function (item) {
+		rv = rv + item.toString();
+	  });
+
 	  return {
 		  content: [
 			  { type: 'text',
