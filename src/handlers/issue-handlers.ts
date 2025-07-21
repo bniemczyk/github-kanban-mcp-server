@@ -39,12 +39,12 @@ export async function handleListIssues(args: IssueArgs): Promise<ToolResponse> {
       },
     ],
   };
-  } catch (error as Error) {
-	  const trace = error.stack.replace(/^\s+at /m, '');
+  } catch (error) {
+	  const trace = (error as Error).stack.replace(/^\s+at /m, '');
 	  return {
 		  content: [
 			  { type: 'text',
-		            text: `Error: ${error.message}\nStack Trace: ${trace}`
+		            text: `Error: ${(error as Error).message}\nStack Trace: ${trace}`
 			  },
 		  ],
 	  }
